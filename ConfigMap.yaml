@@ -1,0 +1,183 @@
+[root@dockerhost ~]# helm create helm-chart
+Creating helm-chart
+
+[root@dockerhost helm-chart]# ls -l
+total 8
+drwxr-xr-x. 2 root root    6 Apr 22 22:04 charts
+-rw-r--r--. 1 root root 1146 Apr 22 22:04 Chart.yaml
+drwxr-xr-x. 3 root root  186 Apr 22 22:10 templates
+-rw-r--r--. 1 root root 1877 Apr 22 22:04 values.yaml
+
+[root@dockerhost helm-chart]# cd templates/
+
+vi configMap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mychart-configmap
+data:
+  myvalue: "Hello World"
+  
+:wq!
+
+
+[root@dockerhost ~]# helm install chart ./helm-chart/ (Here, Chart represents desired helm chart name using ./helm-chart directory)
+NAME: chart
+LAST DEPLOYED: Fri Apr 22 22:35:40 2022
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+
+[root@dockerhost ~]# helm get manifest chart || helm uninstall chart
+---
+# Source: helm-chart/templates/configMap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mychart-configmap
+data:
+  myvalue: "Hello World"
+
+[root@dockerhost ~]# helm uninstall chart
+release "chart" uninstalled
+
+Let's alter configmap.yaml accordingly.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+data:
+  myvalue: "Hello World"
+
+
+[root@dockerhost ~]# helm install --debug --dry-run ajinkya ./helm-chart/
+install.go:178: [debug] Original chart version: ""
+install.go:195: [debug] CHART PATH: /root/helm-chart
+
+NAME: ajinkya
+LAST DEPLOYED: Fri Apr 22 22:58:28 2022
+NAMESPACE: default
+STATUS: pending-install
+REVISION: 1
+TEST SUITE: None
+USER-SUPPLIED VALUES:
+{}
+
+COMPUTED VALUES:
+affinity: {}
+autoscaling:
+  enabled: false
+  maxReplicas: 100
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+fullnameOverride: ""
+image:
+  pullPolicy: IfNotPresent
+  repository: nginx
+  tag: ""
+imagePullSecrets: []
+ingress:
+  annotations: {}
+  className: ""
+  enabled: false
+  hosts:
+  - host: chart-example.local
+    paths:
+    - path: /
+      pathType: ImplementationSpecific
+  tls: []
+nameOverride: ""
+nodeSelector: {}
+podAnnotations: {}
+podSecurityContext: {}
+replicaCount: 1
+resources: {}
+securityContext: {}
+service:
+  port: 80
+  type: ClusterIP
+serviceAccount:
+  annotations: {}
+  create: true
+  name: ""
+tolerations: []
+
+HOOKS:
+MANIFEST:
+---
+# Source: helm-chart/templates/configMap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ajinkya
+data:
+  myvalue: "Hello World"
+     
+     
+     
+     
+Values Files
+
+[root@dockerhost templates]# cat configMap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.ConfigMap.name }}
+data:
+  myvalue: "Hello World" 
+  
+
+[root@dockerhost ~]# vi helm-chart/values.yaml
+ConfigMap:
+   name: mongo-config
+   
+   
+
+Provide Explicite Values
+
+[root@dockerhost ~]# ls -l
+total 70964
+-rw-------. 1 root root     1519 Apr 13  2021 anaconda-ks.cfg
+-rw-r--r--. 1 root root      562 Apr 13 05:31 blue.yaml
+drwxr-xr-x. 4 root root       93 Apr 23 01:08 helm-chart
+drwxr-xr-x. 2 root root       41 Apr 22 22:17 k8s
+-rw-r--r--. 1 root root 72651748 Apr  6 16:48 minikube-linux-amd64
+-rw-r--r--. 1 root root       40 Apr 23 01:19 myvalues.yaml <-------create new file 
+
+
+[root@dockerhost ~]# cat myvalues.yaml
+ConfigMap:
+   name: mongo-new-configmap
+
+[root@dockerhost ~]# helm install chart --debug --dry-run ./helm-chart/ --values=myvalues.yaml || or use --set name=mongo-new-configmap
+install.go:178: [debug] Original chart version: ""
+install.go:195: [debug] CHART PATH: /root/helm-chart
+
+NAME: chart
+LAST DEPLOYED: Sat Apr 23 01:20:15 2022
+NAMESPACE: default
+STATUS: pending-install
+REVISION: 1
+TEST SUITE: None
+USER-SUPPLIED VALUES:
+ConfigMap:
+  name: mongo-new-configmap
+
+COMPUTED VALUES:
+ConfigMap:
+  name: mongo-new-configmap
+
+HOOKS:
+MANIFEST:
+---
+# Source: helm-chart/templates/configMap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-new-configmap
+data:
+  myvalue: "Hello World"
+
+
